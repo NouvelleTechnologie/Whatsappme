@@ -1,0 +1,122 @@
+<!-- formulaire.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulaire Sécurisé</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
+            <div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                    Formulaire de saisie
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    Vos données sont sécurisées et cryptées
+                </p>
+            </div>
+            
+            <form id="secureForm" class="mt-8 space-y-6">
+                <div class="rounded-md shadow-sm -space-y-px">
+                    <div class="mb-4">
+                        <label for="nom" class="block text-sm font-medium text-gray-700">Nom complet</label>
+                        <input id="nom" name="nom" type="text" required 
+                               class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                               pattern="[A-Za-zÀ-ÿ\s]{2,50}"
+                               title="2 à 50 caractères alphabétiques">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input id="email" name="email" type="email" required class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="telephone" class="block text-sm font-medium text-gray-700">Téléphone</label>
+                        <input id="telephone" name="telephone" type="tel" required pattern="^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$" class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" title="Format: +33 6 12 34 56 78 ou 06 12 34 56 78">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="message" class="block text-sm font-medium text-gray-700">Message</label>
+                        <textarea id="message" name="message" required class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" rows="4" maxlength="500"></textarea>
+                        <p class="mt-1 text-sm text-gray-500" id="charCount">0/500 caractères</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="consent" name="consent" type="checkbox" required class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="consent" class="ml-2 block text-sm text-gray-900">
+                            J'accepte que mes données soient traitées
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Envoyer les données
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Validation et sécurité
+        document.getElementById('message').addEventListener('input', function(e) {
+            const charCount = e.target.value.length;
+            document.getElementById('charCount').textContent = `${charCount}/500 caractères`;
+        });
+
+        function sanitizeInput(input) {
+            return input.replace(/<[^>]*>/g, '').trim();
+        }
+
+        function encryptData(data) {
+            const secretKey = 'votre_clé_secrète'; // À remplacer par une clé sécurisée
+            return CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
+        }
+
+        document.getElementById('secureForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Validation côté client
+            const formData = {
+                nom: sanitizeInput(document.getElementById('nom').value),
+                email: sanitizeInput(document.getElementById('email').value),
+                telephone: sanitizeInput(document.getElementById('telephone').value),
+                message: sanitizeInput(document.getElementById('message').value),
+                timestamp: new Date().toISOString()
+            };
+
+            // Validation supplémentaire
+            if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                alert('Format d\'email invalide');
+                return;
+            }
+
+            // Cryptage et stockage des données
+            const encryptedData = encryptData(formData);
+            localStorage.setItem('secureFormData', encryptedData);
+
+            // Préparation du message pour WhatsApp
+            const whatsappMessage = `Bonjour, je suis ${formData.nom}.\n\nEmail: ${formData.email}\nTéléphone: ${formData.telephone}\n\nMessage: ${formData.message}`;
+            const encodedMessage = encodeURIComponent(whatsappMessage);
+            
+            // Remplacez VOTRE_NUMERO par votre numéro WhatsApp au format international sans le +
+            const whatsappURL = `https://wa.me/22893721174?text=${encodedMessage}`;
+
+            // Redirection avec animation
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                window.location.href = whatsappURL;
+            }, 500);
+        });
+    </script>
+</body>
+</html>
